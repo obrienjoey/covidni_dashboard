@@ -12,12 +12,13 @@ jobs:
     - uses: r-lib/actions/setup-r@master
     - uses: r-lib/actions/setup-pandoc@v1
     # Set-up R
-    - name: Install Packages & Render
+    - name: Install Packages
       run: |
         install.packages('flexdashboard')
         install.packages('dplyr')
         install.packages('zoo')
         install.packages('plotly')
+        install.packages('readr')
         install.packages('rmarkdown')
       shell: Rscript {0}
     - name: Render Markdown
