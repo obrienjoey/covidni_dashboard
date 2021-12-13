@@ -11,13 +11,15 @@ jobs:
     - uses: actions/checkout@master
     - uses: r-lib/actions/setup-r@master
     # Set-up R
-    - name: Install Packages
+    - name: Install Packages & Render
       run: |
         install.package('flexdashboard)
         install.package('dplyr')
         install.package('zoo')
         install.package('plotly')
-      shell: Rscript -e "rmarkdown::render_site()"    
+        install.package('rmarkdown')
+        rmarkdown::render_site() 
+      shell: Rscript{0}   
     # Add new files in data folder, commit along with other modified files, push
     - name: Commit Files 
       run: |
