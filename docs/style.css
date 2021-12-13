@@ -1,0 +1,9 @@
+.section.sidebar {
+  top: 61px;
+  border-bottom: 10px solid #ececec;
+  border-left: 10px solid #ececec;
+}
+
+.value-box .value {
+  color: white;
+}
