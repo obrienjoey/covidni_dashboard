@@ -1,1 +1,0 @@
-# covidni_dashboard
