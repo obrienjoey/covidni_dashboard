@@ -1,0 +1,417 @@
+---
+title: "Covid19 Northern Ireland"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    source_code: embed
+    css: style.css
+    social: menu
+    theme:
+      version: 4
+      bg: "white"
+      fg: "#202020"
+      primary: "#2A9D8F"
+      navbar-bg: "#2A9D8F"
+      base_font: 
+          google: Roboto
+      heading_font:
+          google: Roboto
+---
+
+```{css}
+
+.value-output {
+  color: white;
+}
+
+.caption {
+  color: white;
+}
+
+```
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(zoo)
+library(plotly)
+### Pulling most recent data from Github
+national_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_national.csv")
+last_national_data <- national_df %>% na.omit() %>% filter(date == max(date))
+
+local_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_local.csv")
+
+inpatient_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_inpatients.csv")
+
+hosp_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_hospital.csv")
+
+pal_navy <- '#264653'
+pal_teal <- '#2A9D8F'
+pal_yellow <- '#E9C46A'
+pal_orange <- '#F4A261'
+pal_red <- '#E76F51'
+ablack <- '#202020'
+
+shapefile <- sf::st_read(
+  "data/shapefiles/OSNI_Open_Data_-_Largescale_Boundaries_-_Local_Government_Districts_(2012).shp")
+
+```
+
+Dashboard
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Cases {.value-box}
+```{r}
+valueBox(value = paste(format(last_national_data$cases, big.mark = ","), "", sep = " "), 
+         caption = "Cases", 
+         icon = "fas fa-plus-square", 
+         color = pal_navy)
+```
+
+### Tests (last 5 min) {.value-box}
+```{r}
+valueBox(value = paste(format(last_national_data$tests, big.mark = ","), "", sep = " "), 
+         caption = "Tests", 
+         icon = "fas fa-vial", 
+         color = pal_teal)
+```
+
+### Deaths {.value-box}
+```{r}
+valueBox(value = paste(format(last_national_data$deaths, big.mark = ","), "", sep = " "), 
+         caption = "Deaths", 
+         icon = "fas fa-window-close", 
+         color = pal_yellow)
+```
+
+### Hospital Patients {.value-box}
+```{r}
+valueBox(value = paste(format(last_national_data$covid_patients, big.mark = ","), "", sep = " "), 
+         caption = "Hospital Patients", 
+         icon = "fas fa-hospital", 
+         color = pal_orange)
+```
+
+### ICU Patients {.value-box}
+```{r}
+valueBox(value = paste(format(last_national_data$covid_ICU, big.mark = ","), "", sep = " "), 
+         caption = "ICU Patients", 
+         icon = "fas fa-procedures", 
+         color = pal_red)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Covid19 Historical Data {data-width=600}
+    
+```{r}
+
+
+national_df %>%
+  select(date, cases, covid_patients, covid_ICU) %>%
+  unique() %>%
+  mutate(cases_ma7 = round(rollmean(x = cases, # column to take
+                              k = 7, # rolling time period
+                              align = "right", #leave values above the top
+                              fill = NA),2)) %>%
+  plotly::plot_ly() %>%
+  plotly::add_bars(x = ~date,
+                   y = ~cases,
+                   color = I(pal_teal),
+                   hoverinfo = 'text',
+                   text = ~paste(format(date, '%d-%b-%Y'), '</br></br>Cases:', cases),
+                   name = 'Cases') %>%
+  plotly::add_lines(x = ~date,
+                    y = ~cases_ma7,
+                    name = '7-day Average',
+                    mode = 'lines',
+                    hoverinfo = 'text',
+                    text = ~paste(format(date, '%d-%b-%Y'), '</br></br>7-day Average:', cases_ma7),
+                    color = I(ablack)) %>%
+  plotly::add_bars(x = ~date,
+                   y = ~-covid_patients,
+                   name = 'Hospital',
+                   hoverinfo = 'text',
+                   text = ~paste(format(date, '%d-%b-%Y'), '</br></br>Hospital:', covid_patients),
+                   color = I(pal_orange)) %>%
+  plotly::add_bars(x = ~date,
+                   y = ~-covid_ICU,
+                   name = 'ICU',
+                   hoverinfo = 'text',
+                   text = ~paste(format(date, '%d-%b-%Y'), '</br></br>ICU:', covid_ICU),
+                   color = I(pal_red)) %>%
+  plotly::layout(barmode='overlay',
+                 yaxis = list(title = '',
+                              tickvals = seq(-1000,2000,500), 
+                              ticktext = c('1000','500','0','500','1000','1500','2000')),
+                 xaxis = list(title = 'Date',
+                              tickformat = "%b %Y"),
+                 legend = list(x = 0.05, y = 0.9),
+                 hovermode = 'text')
+
+```
+   
+### Deaths and Positivity Rate {data-width=400}
+
+```{r}
+
+min_death_date <- national_df %>%
+  select(date, deaths) %>%
+  na.omit() %>%
+  pull(date)
+
+death_plot <- national_df %>%
+  select(date, deaths) %>%
+  na.omit() %>%
+  plotly::plot_ly() %>%
+  plotly::add_markers(x = ~date,
+                    y = ~deaths,
+                    mode = 'lines',
+                    hoverinfo = 'text',
+                    text = ~paste(paste(format(date, '%d-%b-%Y'), '</br></br>Deaths:', deaths)),
+                                  color = I(pal_yellow)) %>%
+  plotly::layout(barmode='overlay',
+                 yaxis = list(title = 'Deaths'),
+                 xaxis = list(title = '',
+                              range = c(min_death_date - 1, max(national_df$date) + 1)),
+                 hovermode = 'text')
+
+test_plot <- national_df %>%
+  select(date, cases, tests) %>%
+  unique() %>%
+  filter(tests > 0) %>%
+  mutate(negative = tests - cases) %>%
+  plotly::plot_ly(type = 'scatter', 
+                  mode = 'none', 
+                  stackgroup = 'one', 
+                  groupnorm = 'percent') %>%
+  plotly::add_trace(x = ~date, 
+                    y = ~cases, 
+                    fillcolor = pal_navy,
+                    hoverinfo = 'text',
+                    text = ~paste0('Positive : ', round(100*cases/tests,2), '% (', cases, ')')) %>%
+  plotly::add_trace(x = ~date,
+                    y = ~negative,
+                    fillcolor = pal_teal,
+                    hoverinfo = 'text',
+                    text = ~paste0('Negative : ', round(100*negative/tests,2), '% (', negative, ')')) %>%
+  plotly::layout(barmode='overlay',
+                 yaxis = list(title = 'Fraction of Tests',
+                              showgrid = FALSE,
+                              ticksuffix = '%'),
+                 xaxis = list(title = 'Date',
+                              tickformat = "%b %Y",
+                              showgrid = FALSE),
+                 hovermode = "x unified",
+                 showlegend = FALSE)
+
+subplot(death_plot, test_plot, nrows = 2,
+        titleX = TRUE, titleY = TRUE) 
+
+```   
+
+Regional Data
+=======================================================================
+
+### Number of Cases by Electoral District (`r format(max(local_df$date), '%d-%b-%Y')`) { data-width=500 }
+```{r}
+
+local_df_summary <- local_df %>%
+              unique() %>%
+              mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%
+              group_by(area) %>%
+              summarise(tests_1 = sum(tail(tests,1)),
+                        tests_7 = sum(tail(tests,7)),
+                        tests_30 = sum(tail(tests,30)),
+                        tests_all = sum(tests),
+                        cases_1 = sum(tail(cases,1)),
+                        cases_7 = sum(tail(cases,7)),
+                        cases_30 = sum(tail(cases,30)),
+                        cases_all = sum(cases),
+                        deaths_1 = sum(tail(deaths,1)),
+                        deaths_7 = sum(tail(deaths,7)),
+                        deaths_30 = sum(tail(deaths,30)),
+                        deaths_all = sum(deaths)) %>%
+              janitor::adorn_totals("row") %>%
+              as_tibble() %>%
+              filter(area != 'Missing Postcode') %>%
+              na.omit() %>%
+              tidyr::pivot_longer(cols = tests_1:deaths_all,
+                           names_to = 'category') %>%
+              tidyr::separate(category, 
+                       into = c("Category", "Time"),
+                       sep="_(?=[^_]+$)")
+
+map_df <- local_df_summary %>%
+  filter(Time == 1,
+         Category == 'cases') %>%
+  inner_join(shapefile, .,
+             by = c('LGDNAME' = 'area'))
+
+mapview::mapview(sf::st_zm(map_df), 
+                 zcol = c('value'),
+                 layer.name = 'Cases')
+
+```
+
+### Summary of Cases (Deaths) by Electoral District (as of `r format(max(local_df$date), '%d-%b-%Y')`)  { data-width=400 }
+
+```{r}
+
+local_df %>%
+  unique() %>%
+  mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%
+  group_by(area) %>%
+  summarise(cases_1 = sum(tail(cases,1)),
+            cases_7 = sum(tail(cases,7)),
+            cases_30 = sum(tail(cases,30)),
+            cases_all = sum(cases),
+            deaths_1 = sum(tail(deaths,1)),
+            deaths_7 = sum(tail(deaths,7)),
+            deaths_30 = sum(tail(deaths,30)),
+            deaths_all = sum(deaths)) %>%
+  janitor::adorn_totals("row") %>%
+  as_tibble() %>%
+  na.omit() %>%
+  filter(area != 'Missing Postcode') %>%
+  mutate('1 Day' = paste0(format(cases_1, big.mark = ',', trim = TRUE),
+                          ' (', format(deaths_1, big.mark = ',', trim = TRUE), ')'),
+         '7 Days' = paste0(format(cases_7, big.mark = ',', trim = TRUE),
+                           ' (', format(deaths_7, big.mark = ',', trim = TRUE), ')'),
+         '30 Days' = paste0(format(cases_30, big.mark = ',', trim = TRUE),
+                            ' (', format(deaths_30, big.mark = ',', trim = TRUE), ')'),
+         'All Time' = paste0(format(cases_all, big.mark = ',', trim = TRUE),
+                             ' (', format(deaths_all, big.mark = ',', trim = TRUE), ')')) %>%
+  select('Area' = area,
+         '1 Day',
+         '7 Days',
+         '30 Days',
+         'All Time') %>%
+  DT::datatable(rownames = FALSE,
+                fillContainer = T,
+                options = list(pageLength = nrow(.),
+                               searching = FALSE,
+                               dom = 't',
+                               ordering=F,
+                               scrollY = 450,
+                columnDefs = 
+                           list(list(className = 'dt-left', targets = 0),
+                                list(className = 'dt-center', targets = 1:4)))) %>%
+  DT::formatStyle(
+      'Area',
+      target = "row",
+      fontWeight = DT::styleEqual('Total', "bold")
+    )
+  
+```
+
+Hospital Data
+=======================================================================
+
+### ICU Facilities (`r format(max(local_df$date), '%d-%b-%Y')`) { data-width=500 }
+
+```{r}
+
+national_df %>%
+  select(date, covid_ICU, non_covid_ICU, unoccupied_ICU_beds) %>%
+  na.omit() %>%
+  tidyr::pivot_longer(cols = covid_ICU:unoccupied_ICU_beds,
+               names_to = 'group',
+               values_to = 'number') %>%
+  group_by(date) %>%
+  mutate(prop = number/sum(number),
+         group = case_when(group == 'covid_ICU' ~ 'Covid Patients',
+                           group == 'non_covid_ICU' ~ 'Non-Covid Patients',
+                           group == 'unoccupied_ICU_beds' ~ 'Unoccupied')) %>%
+  plotly::plot_ly(x = ~date, y = ~round(prop * 100,2), color = ~group,
+          hoverinfo = 'text', colors = c(pal_orange,pal_teal,pal_yellow),
+          text = ~paste0(group, ': ', number, ' (', round(prop * 100,2), '%)')
+          ) %>%
+  plotly::add_bars() %>%
+  plotly::layout(barmode = 'stack',
+         yaxis = list(title = 'Fraction of ICU Beds',
+                      showgrid = FALSE,
+                      ticksuffix = '%'),
+         xaxis = list(title = 'Date',
+                      tickformat = "%b %Y",
+                      showgrid = FALSE,
+                      hoverformat = "%b %d, %Y"),
+         hovermode = "x unified",
+         showlegend = FALSE)
+
+
+```
+
+### Inpatient Data (`r format(max(local_df$date), '%d-%b-%Y')`) { data-width=500 }
+
+``` {r}
+
+inpatient_df %>%
+  filter(gender == 'All') %>%
+  group_by(date, age_band) %>%
+  summarise(covid_patients = sum(covid_patients)) %>%
+  mutate(age_band = gsub("Aged ", "", age_band)) %>%
+  plot_ly(type = 'scatter', x = ~date, y = ~covid_patients, 
+          color = ~age_band, mode = 'none', 
+          stackgroup = 'one') %>%
+  layout(barmode = 'stack',
+         yaxis = list(title = 'Inpatients at Midnight'),
+         xaxis = list(title = 'Date',
+                      tickformat = "%b %Y",
+                      showgrid = FALSE,
+                      hoverformat = "%b %d, %Y"),
+         hovermode = "x unified",
+         legend = list(orientation = "h", 
+                       xanchor = "center",  
+                       x = 0.5,
+                       y = 1.1))
+
+```
+
+### Total HSC Trust Inpatients (`r format(max(local_df$date), '%d-%b-%Y')`) { data-width=200 }
+
+```{r}
+
+hosp_df %>%
+  group_by(hsc_trust) %>%
+  summarise(admissions = sum(number_of_admissions)) %>%
+  arrange(desc(admissions)) %>%
+  plot_ly(x = ~ admissions, y = ~reorder(hsc_trust,admissions), color = I(pal_teal)) %>%
+  add_bars() %>%
+  layout(yaxis = list(title = 'HSC Trust',
+                      showgrid = FALSE),
+         xaxis = list(title = ''),
+         showlegend = FALSE) %>%
+  add_annotations(text = ~admissions,
+                  y = ~reorder(hsc_trust,admissions),
+                  x = ~admissions/2,
+                  xref = "x",
+                  yref = "y",
+                  font = list(
+                              size = 14,
+                              color = 'white'),
+                  showarrow = FALSE)
+```
+
+About
+=======================================================================
+
+**Covid 19 Northern Ireland Dashboard**
+
+This dashboard provides an overview of the latest data regarding the 2019 Novel Coronavirus COVID-19 (2019-nCoV) outbreak in Northern Ireland. The data is updated every day to incorporate the most recent statistics via an additional piece of software hosted [here](https://github.com/obrienjoey/covid19northernireland). The dashboard itself is implemented in the `R` programming language, specifically using the `flexdashboard` package within an `Rmarkdown`framework. 
+
+**Packages**
+
+* Dashboard interface - the [`flexdashboard`](https://rmarkdown.rstudio.com/flexdashboard/) package. 
+* Visualization - the [`plotly`](https://plot.ly/r/) package for the plots and [`mapview`](https://r-spatial.github.io/mapview/) package for the map.
+* Data manipulation - [`dplyr`](https://dplyr.tidyverse.org/).
+* Tables - the [`DT`](https://rstudio.github.io/DT/) package.
+
+**Contact**
+
+For further details feel free to check out the [Github repo](https://github.com/obrienjoey/covidni_dashboard) or contact me via [Twitter](https://twitter.com/obrienj_).
