@@ -1,0 +1,31 @@
+name: covid_northernireland_dashboard_update
+# Controls when the action will run.
+on:
+  push
+jobs: 
+  CovidDashboardUpdate:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+    # Load repo and install R
+    steps:
+    - uses: actions/checkout@master
+    - uses: r-lib/actions/setup-r@master
+    # Set-up R
+    - name: Install Packages
+      run: |
+        install.package('flexdashboard)
+        install.package('dplyr')
+        install.package('zoo')
+        install.package('plotly')
+      shell: Rscript -e "rmarkdown::render_site()"    
+    # Add new files in data folder, commit along with other modified files, push
+    - name: Commit Files 
+      run: |
+        git config --local user.name actions-user
+        git config --local user.email "actions@github.com"
+        git add *
+        git commit -am "update NI Covid19 dashboard)"
+        git push origin main
+      env:
+        REPO_KEY: ${{secrets.GITHUB_TOKEN}}
+        username: github-actions
