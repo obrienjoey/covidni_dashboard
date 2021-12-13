@@ -19,7 +19,6 @@ jobs:
         install.packages('zoo')
         install.packages('plotly')
         install.packages('rmarkdown')
-        render_site() 
       shell: Rscript {0}
     - name: Render Markdown
       run: Rscript -e 'rmarkdown::render_site()'
