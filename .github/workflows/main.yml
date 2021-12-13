@@ -13,11 +13,11 @@ jobs:
     # Set-up R
     - name: Install Packages & Render
       run: |
-        install.package('flexdashboard')
-        install.package('dplyr')
-        install.package('zoo')
-        install.package('plotly')
-        install.package('rmarkdown')
+        install.packages('flexdashboard')
+        install.packages('dplyr')
+        install.packages('zoo')
+        install.packages('plotly')
+        install.packages('rmarkdown')
         rmarkdown::render_site() 
       shell: Rscript {0}   
     # Add new files in data folder, commit along with other modified files, push
