@@ -19,7 +19,7 @@ jobs:
         install.package('plotly')
         install.package('rmarkdown')
         rmarkdown::render_site() 
-      shell: Rscript{0}   
+      shell: Rscript {0}   
     # Add new files in data folder, commit along with other modified files, push
     - name: Commit Files 
       run: |
