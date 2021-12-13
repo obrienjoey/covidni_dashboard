@@ -10,6 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - uses: r-lib/actions/setup-r@master
+    - uses: r-lib/actions/setup-pandoc@v1
     # Set-up R
     - name: Install Packages & Render
       run: |
@@ -18,8 +19,10 @@ jobs:
         install.packages('zoo')
         install.packages('plotly')
         install.packages('rmarkdown')
-        rmarkdown::render_site() 
-      shell: Rscript {0}   
+        render_site() 
+      shell: Rscript {0}
+    - name: Render Markdown
+      run: Rscript -e 'rmarkdown::render_site()'
     # Add new files in data folder, commit along with other modified files, push
     - name: Commit Files 
       run: |
