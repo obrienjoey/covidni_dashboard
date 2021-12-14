@@ -20,6 +20,7 @@ jobs:
         install.packages('plotly')
         install.packages('readr')
         install.packages('rmarkdown')
+        install.packages('sf')
       shell: Rscript {0}
     - name: Render Markdown
       run: Rscript -e 'rmarkdown::render_site()'
