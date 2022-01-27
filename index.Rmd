@@ -149,9 +149,7 @@ national_df %>%
                    text = ~paste(format(date, '%d-%b-%Y'), '</br></br>ICU:', covid_ICU),
                    color = I(pal_red)) %>%
   plotly::layout(barmode='overlay',
-                 yaxis = list(title = '',
-                              tickvals = seq(-1000,2000,500), 
-                              ticktext = c('1000','500','0','500','1000','1500','2000')),
+                 yaxis = list(title = ''),
                  xaxis = list(title = 'Date',
                               tickformat = "%b %Y"),
                  legend = list(x = 0.05, y = 0.9),
