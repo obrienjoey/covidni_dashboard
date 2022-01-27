@@ -34,8 +34,6 @@ jobs:
       run: |
         git config --local user.name obrienjoey
         git config --local user.email "mr.joeyob@gmail.com"
-        git fetch origin master
-        git pull origin master
         git add *
         git commit -am "update NI Covid19 dashboard"
         git push origin main
