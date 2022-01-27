@@ -263,7 +263,8 @@ map_df <- local_df_summary %>%
 
 mapview::mapview(sf::st_zm(map_df), 
                  zcol = c('value'),
-                 layer.name = 'Cases')
+                 layer.name = 'Cases',
+                 popup = FALSE)
 
 ```
 
