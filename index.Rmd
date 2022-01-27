@@ -48,9 +48,12 @@ hosp_df <- data.table::fread("https://raw.githubusercontent.com/obrienjoey/covid
 
 pal_navy <- '#264653'
 pal_teal <- '#2A9D8F'
+pal_blue <- '#2A9D8F'
+pal_green <- '#8AB17D'
 pal_yellow <- '#E9C46A'
 pal_orange <- '#F4A261'
 pal_red <- '#E76F51'
+pal_brown <- '#403D39'
 ablack <- '#202020'
 
 shapefile <- sf::st_read(
@@ -356,9 +359,13 @@ inpatient_df %>%
   group_by(date, age_band) %>%
   summarise(covid_patients = sum(covid_patients)) %>%
   mutate(age_band = gsub("Aged ", "", age_band)) %>%
-  plot_ly(type = 'scatter', x = ~date, y = ~covid_patients, 
-          color = ~age_band, mode = 'none', 
-          stackgroup = 'one') %>%
+  plot_ly(type = 'bar', x = ~date, y = ~covid_patients, 
+          color = ~age_band,
+          mode = 'none', 
+          stackgroup = 'one',
+          colors = c(pal_brown, pal_red, pal_blue,
+                     pal_navy, pal_green, pal_orange,
+                     pal_teal, pal_yellow)) %>%
   layout(barmode = 'stack',
          yaxis = list(title = 'Inpatients at Midnight'),
          xaxis = list(title = 'Date',
@@ -366,10 +373,10 @@ inpatient_df %>%
                       showgrid = FALSE,
                       hoverformat = "%b %d, %Y"),
          hovermode = "x unified",
-         legend = list(orientation = "h", 
+         legend = list(orientation = "v", 
                        xanchor = "center",  
-                       x = 0.5,
-                       y = 1.1))
+                       x = 0.15,
+                       y = 1)) 
 
 ```
 
