@@ -37,14 +37,14 @@ library(dplyr)
 library(zoo)
 library(plotly)
 ### Pulling most recent data from Github
-national_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_national.csv")
+national_df <- data.table::fread("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_national.csv")
 last_national_data <- national_df %>% na.omit() %>% filter(date == max(date))
 
-local_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_local.csv")
+local_df <- data.table::fread("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_local.csv")
 
-inpatient_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_inpatients.csv")
+inpatient_df <- data.table::fread("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_inpatients.csv")
 
-hosp_df <- readr::read_csv("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_hospital.csv")
+hosp_df <- data.table::fread("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_hospital.csv")
 
 pal_navy <- '#264653'
 pal_teal <- '#2A9D8F'
