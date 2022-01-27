@@ -156,7 +156,8 @@ national_df %>%
                               tickformat = "%b %Y",
                               fixedrange = TRUE),
                  legend = list(x = 0.05, y = 0.9),
-                 hovermode = 'text')
+                 hovermode = 'text') %>%
+  partial_bundle()
 
 ```
    
@@ -219,7 +220,8 @@ test_plot <- national_df %>%
                  showlegend = FALSE)
 
 subplot(death_plot, test_plot, nrows = 2,
-        titleX = TRUE, titleY = TRUE) 
+        titleX = TRUE, titleY = TRUE)  %>%
+  partial_bundle()
 
 ```   
 
@@ -353,7 +355,8 @@ national_df %>%
                       hoverformat = "%b %d, %Y",
                       fixedrange = TRUE),
          hovermode = "x unified",
-         showlegend = FALSE)
+         showlegend = FALSE) %>%
+  partial_bundle()
 
 
 ```
@@ -386,7 +389,8 @@ inpatient_df %>%
          legend = list(orientation = "v", 
                        xanchor = "center",  
                        x = 0.15,
-                       y = 1)) 
+                       y = 1)) %>%
+  partial_bundle()
 
 ```
 
@@ -414,7 +418,9 @@ hosp_df %>%
                   font = list(
                               size = 14,
                               color = 'white'),
-                  showarrow = FALSE)
+                  showarrow = FALSE) %>%
+  partial_bundle()
+
 ```
 
 About
