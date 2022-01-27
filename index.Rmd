@@ -150,9 +150,11 @@ national_df %>%
                    text = ~paste(format(date, '%d-%b-%Y'), '</br></br>ICU:', covid_ICU),
                    color = I(pal_red)) %>%
   plotly::layout(barmode='overlay',
-                 yaxis = list(title = ''),
+                 yaxis = list(title = '',
+                              fixedrange = TRUE),
                  xaxis = list(title = 'Date',
-                              tickformat = "%b %Y"),
+                              tickformat = "%b %Y",
+                              fixedrange = TRUE),
                  legend = list(x = 0.05, y = 0.9),
                  hovermode = 'text')
 
@@ -178,9 +180,11 @@ death_plot <- national_df %>%
                     text = ~paste(paste(format(date, '%d-%b-%Y'), '</br></br>Deaths:', deaths)),
                                   color = I(pal_yellow)) %>%
   plotly::layout(barmode='overlay',
-                 yaxis = list(title = 'Deaths'),
+                 yaxis = list(title = 'Deaths',
+                              fixedrange = TRUE),
                  xaxis = list(title = '',
-                              range = c(min_death_date - 1, max(national_df$date) + 1)),
+                              range = c(min_death_date - 1, max(national_df$date) + 1),
+                              fixedrange = TRUE),
                  hovermode = 'text')
 
 test_plot <- national_df %>%
@@ -205,10 +209,12 @@ test_plot <- national_df %>%
   plotly::layout(barmode='overlay',
                  yaxis = list(title = 'Fraction of Tests',
                               showgrid = FALSE,
-                              ticksuffix = '%'),
+                              ticksuffix = '%',
+                              fixedrange = TRUE),
                  xaxis = list(title = 'Date',
                               tickformat = "%b %Y",
-                              showgrid = FALSE),
+                              showgrid = FALSE,
+                              fixedrange = TRUE),
                  hovermode = "x unified",
                  showlegend = FALSE)
 
@@ -220,7 +226,7 @@ subplot(death_plot, test_plot, nrows = 2,
 Regional Data
 =======================================================================
 
-### Number of Cases by Electoral District (`r format(max(local_df$date), '%d-%b-%Y')`) { data-width=500 }
+### Number of Cases by Electoral District (`r format(max(local_df$date), '%d-%b-%Y')`) { data-width=400 }
 ```{r}
 
 local_df_summary <- local_df %>%
@@ -338,11 +344,13 @@ national_df %>%
   plotly::layout(barmode = 'stack',
          yaxis = list(title = 'Fraction of ICU Beds',
                       showgrid = FALSE,
-                      ticksuffix = '%'),
+                      ticksuffix = '%',
+                      fixedrange = TRUE),
          xaxis = list(title = 'Date',
                       tickformat = "%b %Y",
                       showgrid = FALSE,
-                      hoverformat = "%b %d, %Y"),
+                      hoverformat = "%b %d, %Y",
+                      fixedrange = TRUE),
          hovermode = "x unified",
          showlegend = FALSE)
 
@@ -366,11 +374,13 @@ inpatient_df %>%
                      pal_navy, pal_green, pal_orange,
                      pal_teal, pal_yellow)) %>%
   layout(barmode = 'stack',
-         yaxis = list(title = 'Inpatients at Midnight'),
+         yaxis = list(title = 'Inpatients at Midnight',
+                      fixedrange = TRUE),
          xaxis = list(title = 'Date',
                       tickformat = "%b %Y",
                       showgrid = FALSE,
-                      hoverformat = "%b %d, %Y"),
+                      hoverformat = "%b %d, %Y",
+                      fixedrange = TRUE),
          hovermode = "x unified",
          legend = list(orientation = "v", 
                        xanchor = "center",  
@@ -390,8 +400,10 @@ hosp_df %>%
   plot_ly(x = ~ admissions, y = ~reorder(hsc_trust,admissions), color = I(pal_teal)) %>%
   add_bars() %>%
   layout(yaxis = list(title = 'HSC Trust',
-                      showgrid = FALSE),
-         xaxis = list(title = ''),
+                      showgrid = FALSE,
+                      fixedrange = TRUE),
+         xaxis = list(title = '',
+                      fixedrange = TRUE),
          showlegend = FALSE) %>%
   add_annotations(text = ~admissions,
                   y = ~reorder(hsc_trust,admissions),
