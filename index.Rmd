@@ -388,7 +388,7 @@ inpatient_df %>%
          hovermode = "x unified",
          legend = list(orientation = "v", 
                        xanchor = "center",  
-                       x = 0.15,
+                       x = 0.2,
                        y = 1)) %>%
   partial_bundle()
 
