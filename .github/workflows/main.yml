@@ -36,6 +36,7 @@ jobs:
         git config --local user.email "mr.joeyob@gmail.com"
         git add *
         git commit -am "update NI Covid19 dashboard"
+        git pull
         git push origin main
       env:
         REPO_KEY: ${{secrets.GITHUB_TOKEN}}
