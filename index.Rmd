@@ -3,6 +3,7 @@ title: "Covid19 Northern Ireland"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
+    self_contained: FALSE
     vertical_layout: fill
     source_code: embed
     css: style.css
