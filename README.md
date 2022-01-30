@@ -9,11 +9,11 @@ Examples visuals from the dashboard can be seen below
 <img src="img/inpatient.PNG" alt="drawing" width="60%"/>
 <img src="img/map.PNG" alt="drawing" width="60%"/>
 
-** Data **
+**Data**
 
 The data used in this analysis is updated daily via an additional repository found [here](https://github.com/obrienjoey/covid19northernireland).
 
-** Dashboard Deployment **
+**Dashboard Deployment**
 
 The dashboard is implemented using the `R` programming language, in particular the following packages are utilized
 
