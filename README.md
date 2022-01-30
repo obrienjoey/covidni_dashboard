@@ -6,7 +6,7 @@ This includes summaries of cases, deaths, and hospitilizations arising from the 
 
 Examples visuals from the dashboard can be seen below
 
-<img src="img/inpatient.PNG" alt="drawing" width="200"/>
+<img src="img/inpatient.PNG" alt="drawing" width="60%"/>
 ![Optional Text](img/inpatient.PNG = 600x400)
 
 ** Data **
