@@ -34,12 +34,12 @@ output:
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
-library(dplyr)
-library(zoo)
-library(plotly)
+`%>%` <- magrittr::`%>%`
 ### Pulling most recent data from Github
 national_df <- data.table::fread("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_national.csv")
-last_national_data <- national_df %>% na.omit() %>% filter(date == max(date))
+last_national_data <- national_df %>%
+                        tidyr::drop_na() %>% 
+                        dplyr::filter(date == max(date))
 
 local_df <- data.table::fread("https://raw.githubusercontent.com/obrienjoey/covid19northernireland/main/data/ni_covid_local.csv")
 
@@ -117,12 +117,12 @@ Row
 
 
 national_df %>%
-  select(date, cases, covid_patients, covid_ICU) %>%
-  unique() %>%
-  mutate(cases_ma7 = round(rollmean(x = cases, # column to take
-                              k = 7, # rolling time period
-                              align = "right", #leave values above the top
-                              fill = NA),2)) %>%
+  dplyr::select(date, cases, covid_patients, covid_ICU) %>%
+  dplyr::distinct() %>%
+  dplyr::mutate(cases_ma7 = round(zoo::rollmean(x = cases, # column to take
+                                        k = 7, # rolling time period
+                                        align = "right", #leave values above the top
+                                        fill = NA),2)) %>%
   plotly::plot_ly() %>%
   plotly::add_bars(x = ~date,
                    y = ~cases,
@@ -157,7 +157,7 @@ national_df %>%
                               fixedrange = TRUE),
                  legend = list(x = 0.05, y = 0.9),
                  hovermode = 'text') %>%
-  partial_bundle()
+  plotly::partial_bundle()
 
 ```
    
@@ -166,13 +166,14 @@ national_df %>%
 ```{r}
 
 min_death_date <- national_df %>%
-  select(date, deaths) %>%
-  na.omit() %>%
-  pull(date)
+  dplyr::select(date, deaths) %>%
+  tidyr::drop_na() %>%
+  dplyr::pull(date) %>%
+  min()
 
 death_plot <- national_df %>%
-  select(date, deaths) %>%
-  na.omit() %>%
+  dplyr::select(date, deaths) %>%
+  tidyr::drop_na() %>%
   plotly::plot_ly() %>%
   plotly::add_markers(x = ~date,
                     y = ~deaths,
@@ -184,15 +185,15 @@ death_plot <- national_df %>%
                  yaxis = list(title = 'Deaths',
                               fixedrange = TRUE),
                  xaxis = list(title = '',
-                              range = c(min_death_date - 1, max(national_df$date) + 1),
+                              range = c(min_death_date, max(national_df$date) + 1),
                               fixedrange = TRUE),
                  hovermode = 'text')
 
 test_plot <- national_df %>%
-  select(date, cases, tests) %>%
-  unique() %>%
-  filter(tests > 0) %>%
-  mutate(negative = tests - cases) %>%
+  dplyr::select(date, cases, tests) %>%
+  dplyr::distinct() %>%
+  dplyr::filter(tests > 0) %>%
+  dplyr::mutate(negative = tests - cases) %>%
   plotly::plot_ly(type = 'scatter', 
                   mode = 'none', 
                   stackgroup = 'one', 
@@ -219,9 +220,9 @@ test_plot <- national_df %>%
                  hovermode = "x unified",
                  showlegend = FALSE)
 
-subplot(death_plot, test_plot, nrows = 2,
-        titleX = TRUE, titleY = TRUE)  %>%
-  partial_bundle()
+plotly::subplot(death_plot, test_plot, nrows = 2,
+                titleX = TRUE, titleY = TRUE)  %>%
+  plotly::partial_bundle()
 
 ```   
 
@@ -232,25 +233,25 @@ Regional Data
 ```{r}
 
 local_df_summary <- local_df %>%
-              unique() %>%
-              mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%
-              group_by(area) %>%
-              summarise(tests_1 = sum(tail(tests,1)),
-                        tests_7 = sum(tail(tests,7)),
-                        tests_30 = sum(tail(tests,30)),
-                        tests_all = sum(tests),
-                        cases_1 = sum(tail(cases,1)),
-                        cases_7 = sum(tail(cases,7)),
-                        cases_30 = sum(tail(cases,30)),
-                        cases_all = sum(cases),
-                        deaths_1 = sum(tail(deaths,1)),
-                        deaths_7 = sum(tail(deaths,7)),
-                        deaths_30 = sum(tail(deaths,30)),
-                        deaths_all = sum(deaths)) %>%
+              dplyr::distinct() %>%
+              dplyr::mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%
+              dplyr::group_by(area) %>%
+              dplyr::summarise(tests_1 = sum(tail(tests,1)),
+                               tests_7 = sum(tail(tests,7)),
+                               tests_30 = sum(tail(tests,30)),
+                               tests_all = sum(tests),
+                               cases_1 = sum(tail(cases,1)),
+                               cases_7 = sum(tail(cases,7)),
+                               cases_30 = sum(tail(cases,30)),
+                               cases_all = sum(cases),
+                               deaths_1 = sum(tail(deaths,1)),
+                               deaths_7 = sum(tail(deaths,7)),
+                               deaths_30 = sum(tail(deaths,30)),
+                               deaths_all = sum(deaths)) %>%
               janitor::adorn_totals("row") %>%
-              as_tibble() %>%
-              filter(area != 'Missing Postcode') %>%
-              na.omit() %>%
+              dplyr::as_tibble() %>%
+              dplyr::filter(area != 'Missing Postcode') %>%
+              tidyr::drop_na() %>%
               tidyr::pivot_longer(cols = tests_1:deaths_all,
                            names_to = 'category') %>%
               tidyr::separate(category, 
@@ -258,10 +259,10 @@ local_df_summary <- local_df %>%
                        sep="_(?=[^_]+$)")
 
 map_df <- local_df_summary %>%
-  filter(Time == 1,
-         Category == 'cases') %>%
-  inner_join(shapefile, .,
-             by = c('LGDNAME' = 'area'))
+  dplyr::filter(Time == 1,
+                Category == 'cases') %>%
+  dplyr::inner_join(shapefile, .,
+                    by = c('LGDNAME' = 'area'))
 
 mapview::mapview(sf::st_zm(map_df), 
                  zcol = c('value'),
@@ -275,34 +276,34 @@ mapview::mapview(sf::st_zm(map_df),
 ```{r}
 
 local_df %>%
-  unique() %>%
-  mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%
-  group_by(area) %>%
-  summarise(cases_1 = sum(tail(cases,1)),
-            cases_7 = sum(tail(cases,7)),
-            cases_30 = sum(tail(cases,30)),
-            cases_all = sum(cases),
-            deaths_1 = sum(tail(deaths,1)),
-            deaths_7 = sum(tail(deaths,7)),
-            deaths_30 = sum(tail(deaths,30)),
-            deaths_all = sum(deaths)) %>%
+  dplyr::distinct() %>%
+  dplyr::mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%
+  dplyr::group_by(area) %>%
+  dplyr::summarise(cases_1 = sum(tail(cases,1)),
+                   cases_7 = sum(tail(cases,7)),
+                   cases_30 = sum(tail(cases,30)),
+                   cases_all = sum(cases),
+                   deaths_1 = sum(tail(deaths,1)),
+                   deaths_7 = sum(tail(deaths,7)),
+                   deaths_30 = sum(tail(deaths,30)),
+                   deaths_all = sum(deaths)) %>%
   janitor::adorn_totals("row") %>%
-  as_tibble() %>%
-  na.omit() %>%
-  filter(area != 'Missing Postcode') %>%
-  mutate('1 Day' = paste0(format(cases_1, big.mark = ',', trim = TRUE),
+  dplyr::as_tibble() %>%
+  tidyr::drop_na() %>%
+  dplyr::filter(area != 'Missing Postcode') %>%
+  dplyr::mutate('1 Day' = paste0(format(cases_1, big.mark = ',', trim = TRUE),
                           ' (', format(deaths_1, big.mark = ',', trim = TRUE), ')'),
-         '7 Days' = paste0(format(cases_7, big.mark = ',', trim = TRUE),
-                           ' (', format(deaths_7, big.mark = ',', trim = TRUE), ')'),
-         '30 Days' = paste0(format(cases_30, big.mark = ',', trim = TRUE),
-                            ' (', format(deaths_30, big.mark = ',', trim = TRUE), ')'),
-         'All Time' = paste0(format(cases_all, big.mark = ',', trim = TRUE),
-                             ' (', format(deaths_all, big.mark = ',', trim = TRUE), ')')) %>%
-  select('Area' = area,
-         '1 Day',
-         '7 Days',
-         '30 Days',
-         'All Time') %>%
+                '7 Days' = paste0(format(cases_7, big.mark = ',', trim = TRUE),
+                                 ' (', format(deaths_7, big.mark = ',', trim = TRUE), ')'),
+                '30 Days' = paste0(format(cases_30, big.mark = ',', trim = TRUE),
+                                  ' (', format(deaths_30, big.mark = ',', trim = TRUE), ')'),
+                'All Time' = paste0(format(cases_all, big.mark = ',', trim = TRUE),
+                                   ' (', format(deaths_all, big.mark = ',', trim = TRUE), ')')) %>%
+  dplyr::select('Area' = area,
+                '1 Day',
+                '7 Days',
+                '30 Days',
+                'All Time') %>%
   DT::datatable(rownames = FALSE,
                 fillContainer = T,
                 options = list(pageLength = nrow(.),
@@ -329,34 +330,34 @@ Hospital Data
 ```{r}
 
 national_df %>%
-  select(date, covid_ICU, non_covid_ICU, unoccupied_ICU_beds) %>%
-  na.omit() %>%
+  dplyr::select(date, covid_ICU, non_covid_ICU, unoccupied_ICU_beds) %>%
+  tidyr::drop_na() %>%
   tidyr::pivot_longer(cols = covid_ICU:unoccupied_ICU_beds,
                names_to = 'group',
                values_to = 'number') %>%
-  group_by(date) %>%
-  mutate(prop = number/sum(number),
-         group = case_when(group == 'covid_ICU' ~ 'Covid Patients',
-                           group == 'non_covid_ICU' ~ 'Non-Covid Patients',
-                           group == 'unoccupied_ICU_beds' ~ 'Unoccupied')) %>%
+  dplyr::group_by(date) %>%
+  dplyr::mutate(prop = number/sum(number),
+                group = dplyr::case_when(group == 'covid_ICU' ~ 'Covid Patients',
+                                  group == 'non_covid_ICU' ~ 'Non-Covid Patients',
+                                  group == 'unoccupied_ICU_beds' ~ 'Unoccupied')) %>%
   plotly::plot_ly(x = ~date, y = ~round(prop * 100,2), color = ~group,
           hoverinfo = 'text', colors = c(pal_orange,pal_teal,pal_yellow),
           text = ~paste0(group, ': ', number, ' (', round(prop * 100,2), '%)')
           ) %>%
   plotly::add_bars() %>%
   plotly::layout(barmode = 'stack',
-         yaxis = list(title = 'Fraction of ICU Beds',
-                      showgrid = FALSE,
-                      ticksuffix = '%',
-                      fixedrange = TRUE),
-         xaxis = list(title = 'Date',
-                      tickformat = "%b %Y",
-                      showgrid = FALSE,
-                      hoverformat = "%b %d, %Y",
-                      fixedrange = TRUE),
-         hovermode = "x unified",
-         showlegend = FALSE) %>%
-  partial_bundle()
+                 yaxis = list(title = 'Fraction of ICU Beds',
+                              showgrid = FALSE,
+                              ticksuffix = '%',
+                              fixedrange = TRUE),
+                 xaxis = list(title = 'Date',
+                              tickformat = "%b %Y",
+                              showgrid = FALSE,
+                              hoverformat = "%b %d, %Y",
+                              fixedrange = TRUE),
+                 hovermode = "x unified",
+                 showlegend = FALSE) %>%
+  plotly::partial_bundle()
 
 
 ```
@@ -366,31 +367,31 @@ national_df %>%
 ``` {r}
 
 inpatient_df %>%
-  filter(gender == 'All') %>%
-  group_by(date, age_band) %>%
-  summarise(covid_patients = sum(covid_patients)) %>%
-  mutate(age_band = gsub("Aged ", "", age_band)) %>%
-  plot_ly(type = 'bar', x = ~date, y = ~covid_patients, 
-          color = ~age_band,
-          mode = 'none', 
-          stackgroup = 'one',
-          colors = c(pal_brown, pal_red, pal_blue,
-                     pal_navy, pal_green, pal_orange,
-                     pal_teal, pal_yellow)) %>%
-  layout(barmode = 'stack',
-         yaxis = list(title = 'Inpatients at Midnight',
-                      fixedrange = TRUE),
-         xaxis = list(title = 'Date',
-                      tickformat = "%b %Y",
-                      showgrid = FALSE,
-                      hoverformat = "%b %d, %Y",
-                      fixedrange = TRUE),
-         hovermode = "x unified",
-         legend = list(orientation = "v", 
-                       xanchor = "center",  
-                       x = 0.2,
-                       y = 1)) %>%
-  partial_bundle()
+  dplyr::filter(gender == 'All') %>%
+  dplyr::group_by(date, age_band) %>%
+  dplyr::summarise(covid_patients = sum(covid_patients)) %>%
+  dplyr::mutate(age_band = gsub("Aged ", "", age_band)) %>%
+  plotly::plot_ly(type = 'bar', x = ~date, y = ~covid_patients, 
+                  color = ~age_band,
+                  mode = 'none', 
+                  stackgroup = 'one',
+                  colors = c(pal_brown, pal_red, pal_blue,
+                             pal_navy, pal_green, pal_orange,
+                             pal_teal, pal_yellow)) %>%
+  plotly::layout(barmode = 'stack',
+                 yaxis = list(title = 'Inpatients at Midnight',
+                              fixedrange = TRUE),
+                 xaxis = list(title = 'Date',
+                              tickformat = "%b %Y",
+                              showgrid = FALSE,
+                              hoverformat = "%b %d, %Y",
+                              fixedrange = TRUE),
+                 hovermode = "x unified",
+                 legend = list(orientation = "v", 
+                               xanchor = "center",  
+                               x = 0.2,
+                               y = 1)) %>%
+  plotly::partial_bundle()
 
 ```
 
@@ -399,18 +400,18 @@ inpatient_df %>%
 ```{r}
 
 hosp_df %>%
-  group_by(hsc_trust) %>%
-  summarise(admissions = sum(number_of_admissions)) %>%
-  arrange(desc(admissions)) %>%
-  plot_ly(x = ~ admissions, y = ~reorder(hsc_trust,admissions), color = I(pal_teal)) %>%
-  add_bars() %>%
-  layout(yaxis = list(title = 'HSC Trust',
-                      showgrid = FALSE,
-                      fixedrange = TRUE),
-         xaxis = list(title = '',
-                      fixedrange = TRUE),
-         showlegend = FALSE) %>%
-  add_annotations(text = ~admissions,
+  dplyr::group_by(hsc_trust) %>%
+  dplyr::summarise(admissions = sum(number_of_admissions)) %>%
+  dplyr::arrange(desc(admissions)) %>%
+  plotly::plot_ly(x = ~ admissions, y = ~reorder(hsc_trust,admissions), color = I(pal_teal)) %>%
+  plotly::add_bars() %>%
+  plotly::layout(yaxis = list(title = 'HSC Trust',
+                              showgrid = FALSE,
+                              fixedrange = TRUE),
+                 xaxis = list(title = '',
+                              fixedrange = TRUE),
+                 showlegend = FALSE) %>%
+  plotly::add_annotations(text = ~admissions,
                   y = ~reorder(hsc_trust,admissions),
                   x = ~admissions/2,
                   xref = "x",
@@ -419,7 +420,7 @@ hosp_df %>%
                               size = 14,
                               color = 'white'),
                   showarrow = FALSE) %>%
-  partial_bundle()
+  plotly::partial_bundle()
 
 ```
 
