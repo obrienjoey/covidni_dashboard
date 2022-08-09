@@ -10,6 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - uses: r-lib/actions/setup-r@master
+      with:
+            r-version: 4.0
     - uses: r-lib/actions/setup-pandoc@v1
     # Set-up R
     - name: Install Packages
